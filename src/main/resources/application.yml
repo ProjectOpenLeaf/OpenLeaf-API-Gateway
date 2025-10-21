@@ -28,6 +28,7 @@ spring:
             - Path=/api/journals/**
           filters:
             - StripPrefix=2
+            - UserHeader
 
         - id: user-service
           uri: http://localhost:8083
