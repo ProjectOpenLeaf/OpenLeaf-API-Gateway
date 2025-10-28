@@ -45,6 +45,14 @@ spring:
           filters:
             - StripPrefix=2
 
+        - id: assignment-service
+          uri: http://localhost:8085
+          predicates:
+            - Path=/api/assignments/**
+          filters:
+            - StripPrefix=2
+            - UserHeader
+
   security:
     oauth2:
       resourceserver:
@@ -52,12 +60,26 @@ spring:
           issuer-uri: http://localhost:8080/realms/OpenLeaf
           jwk-set-uri: http://localhost:8080/realms/OpenLeaf/protocol/openid-connect/certs
 
-# JWT converter configuration (from your auth service)
 jwt:
   auth:
     converter:
       resource-id: openleaf-rest-api
       principle-attribute: preferred_username
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    prometheus:
+      enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+    tags:
+      application: ${spring.application.name}
 
 logging:
   level:
