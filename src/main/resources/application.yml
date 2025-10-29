@@ -53,6 +53,14 @@ spring:
             - StripPrefix=2
             - UserHeader
 
+        - id: appointments-service
+          uri: http://localhost:8087
+          predicates:
+            - Path=/api/appointments/**
+          filters:
+            - StripPrefix=2
+            - UserHeader
+
   security:
     oauth2:
       resourceserver:
