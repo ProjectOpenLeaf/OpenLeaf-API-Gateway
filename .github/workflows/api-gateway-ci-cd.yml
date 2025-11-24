@@ -1,4 +1,4 @@
-name: Build, Test & SonarQube Analysis
+name: Build, Test, Analyze & Publish Docker Image
 
 on:
   push:
@@ -6,9 +6,17 @@ on:
   pull_request:
     branches: [ main ]
 
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository_owner }}/openleaf-api-gateway
+
 jobs:
   build-test-analyze:
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
 
     steps:
       - name: Checkout code
@@ -63,3 +71,95 @@ jobs:
         with:
           name: coverage-reports
           path: build/reports/jacoco/test/
+
+      # ========================================
+      # 🔒 Snyk Dependency Vulnerability Scan
+      # ========================================
+      - name: Install Snyk CLI
+        run: npm install -g snyk
+
+      - name: Authenticate with Snyk
+        run: snyk auth ${{ secrets.SNYK_TOKEN }}
+
+      # Run the test first (for console visibility)
+      - name: Snyk Test (Gradle Dependencies)
+        run: snyk test --all-projects --severity-threshold=medium
+        continue-on-error: true   # Don’t fail the build on findings, just report them
+
+      # 🆕 Upload snapshot to Snyk dashboard so it’s visible on app.snyk.io
+      - name: Snyk Monitor (Upload to Dashboard)
+        run: snyk monitor --all-projects
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+      # ========================================
+      # Docker Build & Push (only on main)
+      # ========================================
+      - name: Set up Docker Buildx
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha,prefix=main-
+            type=raw,value=latest
+
+      - name: Build and push Docker image
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        id: build-push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # ========================================
+      # 🐳 Snyk Container Vulnerability Scan
+      # ========================================
+      - name: Snyk Container Test
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: snyk container test ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest --file=Dockerfile --severity-threshold=medium
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        continue-on-error: true  # Don’t block deployment; just report
+
+      # 🆕 Upload Docker image snapshot to Snyk Dashboard
+      - name: Snyk Container Monitor
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: snyk container monitor ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest --file=Dockerfile
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+      - name: Image published summary
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          echo "### Docker Image Published! 🚀" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Image:** \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Tags:**" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "${{ steps.meta.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Pull command:**" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
