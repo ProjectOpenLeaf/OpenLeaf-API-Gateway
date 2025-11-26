@@ -25,10 +25,10 @@ public class JwtAuthConverter implements Converter<Jwt, Mono<AbstractAuthenticat
     private final JwtGrantedAuthoritiesConverter jwtGrantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
 
     @Value("${jwt.auth.converter.principle-attribute}")
-    private String principalAttribute;
+    public String principalAttribute;
 
     @Value("${jwt.auth.converter.resource-id}")
-    private String resourceId;
+    public String resourceId;
 
     @Override
     public Mono<AbstractAuthenticationToken> convert(@NonNull Jwt jwt) {

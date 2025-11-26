@@ -130,23 +130,6 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      # ========================================
-      # 🐳 Snyk Container Vulnerability Scan
-      # ========================================
-      - name: Snyk Container Test
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: snyk container test ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest --file=Dockerfile --severity-threshold=medium
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        continue-on-error: true  # Don’t block deployment; just report
-
-      # 🆕 Upload Docker image snapshot to Snyk Dashboard
-      - name: Snyk Container Monitor
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: snyk container monitor ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest --file=Dockerfile
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-
       - name: Image published summary
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
