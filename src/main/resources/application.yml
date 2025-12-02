@@ -1,5 +1,14 @@
 server:
-  port: 8081
+  port: 8443  # Changed from 8081
+  ssl:
+    enabled: true
+    key-store: classpath:certs/api-gateway.p12
+    key-store-password: changeit
+    key-store-type: PKCS12
+    key-alias: api-gateway
+  # For development only - accept self-signed certificates from backend services
+  http2:
+    enabled: true
 
 spring:
   application:
@@ -10,7 +19,7 @@ spring:
       globalcors:
         cors-configurations:
           '[/**]':
-            allowedOrigins: "http://localhost:5173"
+            allowedOrigins: "https://localhost:5173"  # Changed to HTTPS
             allowedMethods:
               - GET
               - POST
@@ -23,7 +32,7 @@ spring:
 
       routes:
         - id: journal-service
-          uri: http://localhost:8082
+          uri: http://localhost:8082  # Services can stay HTTP internally
           predicates:
             - Path=/api/journals/**
           filters:
@@ -65,8 +74,8 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://localhost:8080/realms/OpenLeaf
-          jwk-set-uri: http://localhost:8080/realms/OpenLeaf/protocol/openid-connect/certs
+          issuer-uri: http://localhost:8080/realms/OpenLeaf  # Keep HTTP
+          jwk-set-uri: http://localhost:8080/realms/OpenLeaf/protocol/openid-connect/certs  # Keep HTTP
 
 jwt:
   auth:

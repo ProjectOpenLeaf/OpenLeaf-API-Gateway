@@ -48,9 +48,9 @@ public class SecurityConfig {
     public CorsWebFilter corsWebFilter() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-        config.addAllowedOrigin("http://localhost:5173"); // your frontend
+        config.addAllowedOrigin("https://localhost:5173"); // Changed to HTTPS
         config.addAllowedHeader("*");
-        config.addAllowedMethod("*"); // GET, POST, OPTIONS, etc.
+        config.addAllowedMethod("*");
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
