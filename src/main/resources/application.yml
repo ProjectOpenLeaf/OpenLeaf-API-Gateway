@@ -1,12 +1,11 @@
 server:
-  port: 8443  # Changed from 8081
+  port: ${SERVER_PORT:8443}
   ssl:
-    enabled: true
-    key-store: classpath:certs/api-gateway.p12
-    key-store-password: changeit
+    enabled: ${SERVER_SSL_ENABLED:true}
+    key-store: ${SERVER_SSL_KEY_STORE:classpath:certs/api-gateway.p12}
+    key-store-password: ${SERVER_SSL_KEY_STORE_PASSWORD:changeit}
     key-store-type: PKCS12
     key-alias: api-gateway
-  # For development only - accept self-signed certificates from backend services
   http2:
     enabled: true
 
