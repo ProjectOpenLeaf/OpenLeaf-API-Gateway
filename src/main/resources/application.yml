@@ -1,13 +1,13 @@
 server:
-  port: ${SERVER_PORT:8443}
-  ssl:
-    enabled: ${SERVER_SSL_ENABLED:true}
-    key-store: ${SERVER_SSL_KEY_STORE:classpath:certs/api-gateway.p12}
-    key-store-password: ${SERVER_SSL_KEY_STORE_PASSWORD:changeit}
-    key-store-type: PKCS12
-    key-alias: api-gateway
-  http2:
-    enabled: true
+  port: ${SERVER_PORT:8080}
+#  ssl:
+#    enabled: ${SERVER_SSL_ENABLED:true}
+#    key-store: ${SERVER_SSL_KEY_STORE:classpath:certs/api-gateway.p12}
+#    key-store-password: ${SERVER_SSL_KEY_STORE_PASSWORD:changeit}
+#    key-store-type: PKCS12
+#    key-alias: api-gateway
+#  http2:
+#    enabled: true
 
 spring:
   application:
@@ -18,7 +18,7 @@ spring:
       globalcors:
         cors-configurations:
           '[/**]':
-            allowedOrigins: "https://localhost:5173"  # Changed to HTTPS
+            allowedOrigins: "http://localhost:5173"  # Changed to HTTPS
             allowedMethods:
               - GET
               - POST
@@ -45,13 +45,6 @@ spring:
           filters:
             - StripPrefix=2
             - UserHeader
-
-        - id: python-service
-          uri: http://localhost:8084
-          predicates:
-            - Path=/api/python/**
-          filters:
-            - StripPrefix=2
 
         - id: assignment-service
           uri: http://localhost:8085
